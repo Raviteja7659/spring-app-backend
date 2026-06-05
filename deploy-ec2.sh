@@ -36,7 +36,14 @@ cd /home/ec2-user
 git clone https://github.com/Raviteja7659/spring-app-backend.git
 git clone https://github.com/Raviteja7659/spring-app-frontend.git
 
-# 8. Spin up the applications
+# 8. Add Swap Space (Crucial for t2.micro to prevent Out-Of-Memory crashes)
+echo "==> Setting up 2GB Swap Space..."
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# 9. Spin up the applications
 echo "==> Starting the Database and Backend..."
 cd /home/ec2-user/spring-app-backend
 sudo /usr/local/bin/docker-compose up -d --build
