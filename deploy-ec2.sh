@@ -25,10 +25,15 @@ sudo systemctl enable docker
 echo "==> Adding ec2-user to docker group..."
 sudo usermod -aG docker ec2-user
 
-# 6. Install Docker Compose
+# 6. Install Docker Compose and Buildx
 echo "==> Installing Docker Compose..."
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+
+echo "==> Installing Docker Buildx..."
+sudo mkdir -p /usr/libexec/docker/cli-plugins
+sudo curl -SL https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 -o /usr/libexec/docker/cli-plugins/docker-buildx
+sudo chmod +x /usr/libexec/docker/cli-plugins/docker-buildx
 
 # 7. Clone the repositories
 echo "==> Cloning FinFlow backend and frontend repositories..."
@@ -43,18 +48,28 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 
-# 9. Spin up the applications
+# 9. Spin up the Database and Backend
 echo "==> Starting the Database and Backend..."
 cd /home/ec2-user/spring-app-backend
 sudo /usr/local/bin/docker-compose up -d --build
 
-echo "==> Starting the Frontend..."
+# 10. Configure and Start the Frontend
+echo "==> Configuring Frontend for Public IP..."
 cd /home/ec2-user/spring-app-frontend
+
+# Dynamically fetch the EC2 instance's Public IP address
+PUBLIC_IP=$(curl -s http://checkip.amazonaws.com)
+echo "Detected Public IP: $PUBLIC_IP"
+
+# Automatically update the frontend files to use the real Public IP instead of localhost
+sed -i "s/localhost/$PUBLIC_IP/g" src/api.js
+sed -i "s/localhost/$PUBLIC_IP/g" docker-compose.yml
+
+echo "==> Starting the Frontend..."
 sudo /usr/local/bin/docker-compose up -d --build
 
 echo "=================================================="
 echo "Deployment Complete!"
-echo "Backend is running on port 8082"
-echo "Frontend is running on port 5173"
-echo "Database is running on port 5432"
+echo "Your application is officially live!"
+echo "Visit: http://$PUBLIC_IP:5173"
 echo "=================================================="
